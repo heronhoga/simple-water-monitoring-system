@@ -4,53 +4,67 @@
 
 LiquidCrystal_I2C lcd(0x27, 2, 16);
 
-//TURBIDITY
+// TURBIDITY
 int sensorPin = A0; 
 
-//DS18B20
+// DS18B20
 #define ONE_WIRE_BUS 7
 OneWire oneWire(ONE_WIRE_BUS);	
 DallasTemperature sensors(&oneWire);
 
-void setup()
-{ 
+// LED pins
+#define GREEN_LED_PIN 5
+#define RED_LED_PIN 4
+
+void setup() { 
   Serial.begin(9600);
-  // initialize LCD
+  
+  // Initialize LCD
   lcd.init();
-  // turn on LCD backlight                      
   lcd.backlight();
+  
+  // Initialize LED pins
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  
+  // Turn off both LEDs initially
+  digitalWrite(GREEN_LED_PIN, LOW);
+  digitalWrite(RED_LED_PIN, LOW);
 }
+
 void loop() {
-  //TURBIDITY SENSOR
+  // TURBIDITY SENSOR
   int sensorValue = analogRead(sensorPin);
   Serial.println(sensorValue);
   int turbidity = map(sensorValue, 0, 750, 100, 0);
   delay(100);
-  lcd.setCursor(0, 0);
-  lcd.print("C:");
-  lcd.print("   ");
-  lcd.setCursor(2, 0);
-  lcd.print(turbidity);
-
-  //DS18B20
   
-  delay(100);
+  lcd.setCursor(0, 0);
+  lcd.print("TU:");
+  lcd.setCursor(3, 0);
+  
+  // Check turbidity and control LEDs
   if (turbidity < 20) {
-    lcd.setCursor(5, 0);
-    lcd.print("JERNIH");
-    Serial.print("AIR JERNIH");
-  }
-  if ((turbidity > 20) && (turbidity < 50)) {
-    lcd.setCursor(5, 0);
-    lcd.print("KERUH");
-    Serial.print("AIR CENDERUNG KERUH");
-  }
-  if (turbidity > 50) {
-    lcd.setCursor(5, 0);
+    lcd.print("JERNIH   ");
+    Serial.println("AIR JERNIH");
+    Serial.println(turbidity);
+    digitalWrite(GREEN_LED_PIN, HIGH);
+    digitalWrite(RED_LED_PIN, LOW);
+  } else if ((turbidity >= 20) && (turbidity <= 50)) {
+    lcd.print("KERUH   ");
+    Serial.println("AIR CENDERUNG KERUH");
+    Serial.println(turbidity);
+    digitalWrite(GREEN_LED_PIN, LOW);
+    digitalWrite(RED_LED_PIN, HIGH);
+  } else {
     lcd.print("KERUH++");
-    Serial.print("AIR KERUH SEKALI");
+    Serial.println("AIR KERUH SEKALI");
+    Serial.println(turbidity);
+    digitalWrite(GREEN_LED_PIN, LOW);
+    digitalWrite(RED_LED_PIN, HIGH);
   }
 
+  // DS18B20
   sensors.requestTemperatures();
   float temperature = sensors.getTempCByIndex(0);
   
